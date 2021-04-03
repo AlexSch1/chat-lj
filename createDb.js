@@ -63,48 +63,53 @@
 
  
 const mongoose = require("./libs/mongoose");
-const User = require("./models/User").User;
 const async = require('async');
 
-// async.series([
-//     open,
-//     dropDB,
-//     createUsers,
-//     close,
-// ], function(err, result) {
-//     // console.log(arguments);
-// });
+async.series([
+    open,
+    dropDB,
+    requireModels,
+    createUsers,
+], function(err, result) {
+    // console.log(arguments);
+    mongoose.disconnect();
+});
 
-
-function runner(deeds) {
-    return deeds.reduce(function(p, deed) {
-        return p.then(function() {
-            return deed()
-        })
-    }, Promise.resolve())
-}
-
-function a1() {
-    return new Promise(function(resolve) {
-        setTimeout(() => {
-            console.log('a1');
-            resolve()
-        }, 2000)
-    })
-}
-
-function a2() {
-    return new Promise(function(resolve) {
-        setTimeout(() => {
-            console.log('a2');
-            resolve()
-        }, 200)
-    })
-}
-
-runner([a1, a2]).then((dd) => {
-    console.log('res', dd);
-})
+/**
+ *
+ * Последовательные calls like async.series
+ *
+ *
+ * */
+// function runner(deeds) {
+//     return deeds.reduce(function(p, deed) {
+//         return p.then(function() {
+//             return deed()
+//         })
+//     }, Promise.resolve())
+// }
+//
+// function a1() {
+//     return new Promise(function(resolve) {
+//         setTimeout(() => {
+//             console.log('a1');
+//             resolve()
+//         }, 2000)
+//     })
+// }
+//
+// function a2() {
+//     return new Promise(function(resolve) {
+//         setTimeout(() => {
+//             console.log('a2');
+//             resolve()
+//         }, 200)
+//     })
+// }
+//
+// runner([a1, a2]).then((dd) => {
+//     console.log('res', dd);
+// })
 
 
 function open(cb) {
@@ -116,25 +121,36 @@ function close() {
 }
 
 function dropDB(cb) {
-  const db = mongoose.connection.db;
-  db.dropDatabase(cb);
+    const db = mongoose.connection.db;
+    db.dropDatabase(cb);
+}
+
+function requireModels(cb) {
+    require("./models/User").User;
+
+    async.each(Object.keys(mongoose.models), (modelName, callback) => {
+        mongoose.models[modelName].ensureIndexes(callback);
+    }, cb);
 }
 
 function createUsers(cb) {
-  const user1 = new User({
+    const user1 = new mongoose.models.User({
     username: "Alex1",
     password: "alex1",
   });
 
-  const user2 = new User({
+  const user2 = new mongoose.models.User({
     username: "Alex2",
     password: "alex2",
   });
 
-  const user3 = new User({
+  const user3 = new mongoose.models.User({
     username: "Alex3",
     password: "alex3",
   });
 
+  /**
+   * Parallel call - white all
+   * */
   Promise.all([user1.save(), user2.save(), user3.save()]).then(cb);
 }
