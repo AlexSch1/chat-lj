@@ -4,16 +4,20 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const bodyParser = require('body-parser');
+const HttpError = require('./error').HttpError;
 
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
 var app = express();
+console.log('ads')
 app.engine('ejs', require('ejs-locals'));
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+
+app.use(require('./middleware/sendHttpError'));
 
 if (app.get('env') === 'development') {
   app.use(logger('dev')); // immediate до запроса или после логировать
@@ -35,13 +39,22 @@ app.use(function(req, res, next) {
 
 // error handler
 app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  if (typeof err === 'number') {
+    err = new HttpError(err);
+  }
+  console.log(HttpError)
+  if (err instanceof HttpError) {
+    res.sendHttpError(err);
+  } else {
+    // set locals, only providing error in development
+    res.locals.message = err.message;
+    res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+    // render the error page
+    res.status(err.status || 500);
+    res.render('error');
+  }
+
 });
 
 module.exports = app;
