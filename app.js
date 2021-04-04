@@ -5,7 +5,8 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const bodyParser = require('body-parser');
 const HttpError = require('./error').HttpError;
-
+const mongoose = require('mongoose');
+var session = require('express-session')
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -27,7 +28,31 @@ if (app.get('env') === 'development') {
 app.use(express.json()); // req.body app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser()); // req.cookies
+
+const MongoStore = require('connect-mongo');
+
+app.use(session({
+  secret: 'keyboard',
+  key: 'sid',
+  saveUninitialized: true,
+  resave: false,
+  cookie: {
+    path: '/',
+    maxAge: null,
+    httpOnly: true,
+  },
+  store: MongoStore.create({
+    mongoUrl: 'mongodb://localhost:27017/chat',
+    // mongoOptions: advancedOptions // See below for details
+  })
+}));
 app.use(express.static(path.join(__dirname, 'public')));
+
+
+app.use(function(req, res, next) {
+  req.session.numberOfVisits = req.session.numberOfVisits + 1 || 1;
+  res.send('Visits '+ req.session.numberOfVisits)
+});
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
