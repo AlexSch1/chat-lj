@@ -10,6 +10,10 @@ var session = require('express-session')
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var loginRouter = require('./routes/login');
+var chatRouter = require('./routes/chat');
+var logoutRouter = require('./routes/logout');
+var checkAuth = require('./middleware/auth');
 
 var app = express();
 console.log('ads')
@@ -49,13 +53,18 @@ app.use(session({
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-app.use(function(req, res, next) {
-  req.session.numberOfVisits = req.session.numberOfVisits + 1 || 1;
-  res.send('Visits '+ req.session.numberOfVisits)
-});
+// app.use(function(req, res, next) {
+//   req.session.numberOfVisits = req.session.numberOfVisits + 1 || 1;
+//   res.send('Visits '+ req.session.numberOfVisits)
+// });
+
+app.use(require('./middleware/loadUser'));
 
 app.use('/', indexRouter);
+app.use('/login', loginRouter);
 app.use('/users', usersRouter);
+app.use('/chat', checkAuth,  chatRouter);
+app.use('/logout', logoutRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
