@@ -14,6 +14,7 @@ var loginRouter = require('./routes/login');
 var chatRouter = require('./routes/chat');
 var logoutRouter = require('./routes/logout');
 var checkAuth = require('./middleware/auth');
+const sessionStore = require('./libs/sessionStore');
 
 var app = express();
 console.log('ads')
